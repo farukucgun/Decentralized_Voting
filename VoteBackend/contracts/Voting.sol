@@ -56,4 +56,33 @@ contract Voting {
         }
         return (winner, winningVoteCount);
     }
+
+    // get the top 3 candidates and their votes
+    function getTopCandidates() public view returns (bytes32[3] memory, uint256[3] memory) {
+        bytes32[3] memory topNames;
+        uint256[3] memory topVotes;
+
+        for (uint256 i = 0; i < candidateList.length; i++) {
+            uint256 votes = votesReceived[candidateList[i]];
+
+            // Check if the candidate has more votes than the current top candidates
+            for (uint256 j = 0; j < 3; j++) {
+                if (votes >= topVotes[j]) {
+                    // Shift the current top candidates down the list
+                    for (uint256 k = 2; k > j; k--) {
+                        topVotes[k] = topVotes[k - 1];
+                        topNames[k] = topNames[k - 1];
+                    }
+
+                    // Update the new top candidate
+                    topVotes[j] = votes;
+                    topNames[j] = candidateList[i];
+
+                    break; // Exit the inner loop once the candidate is inserted into the top list
+                }
+            }
+        }
+
+        return (topNames, topVotes);
+    }
 }

@@ -15,6 +15,7 @@ const App = () => {
     winner: '',
     winnerVote: 0
   })
+  const [topCandidates, setTopCandidates] = useState([])
 
   useEffect(() => {
     const loadWeb3 = async () => {
@@ -58,6 +59,9 @@ const App = () => {
           setHasVoted(hasVoted);
         }
 
+        const topCanditates = await contract.methods.getTopCandidates().call();
+        setTopCandidates(topCanditates);
+
         setLoading(false)
         
       } else {
@@ -69,9 +73,7 @@ const App = () => {
 
   useEffect(() => {
     const getWinnerDetails = async () => {
-      if (totalVotes === 0) {
-        return;
-      }
+      if (!hasVoted) return;
       try {
         setLoading(true);
         
@@ -81,6 +83,9 @@ const App = () => {
           winnerVote: Number(winnerDetails[1])
         });
 
+        const topCanditates = await contract.methods.getTopCandidates().call();
+        setTopCandidates(topCanditates);
+
       } catch (err) {
         console.log(err)
       } finally {
@@ -88,7 +93,7 @@ const App = () => {
       }
     }
     getWinnerDetails();
-  }, [totalVotes])
+  }, [hasVoted])
 
   const voteHandler = async (candidate) => {
     try {
@@ -128,7 +133,15 @@ const App = () => {
         <h1>Thanks for voting!</h1>
         <p>Your vote has been recorded for {votedCandidate}.</p>
         <p>There are {totalVotes} votes in total.</p>
-        <p>The winner is {winnerDetails.winner} with {winnerDetails.winnerVote} votes.</p>
+        {/* <p>The winner is {winnerDetails.winner} with {winnerDetails.winnerVote} votes.</p> */}
+
+        <h2>Top Candidates</h2>
+        {topCandidates[0].map((candidate, key) => (
+          <div key={key} className="candidate">
+            <h3>#{key+1} {Web3.utils.hexToUtf8(candidate).replace(/\0+$/, '')}</h3>
+            <p>{Number(topCandidates[1][key])} votes</p>
+          </div>
+        ))}
       </div>
     )
   }
