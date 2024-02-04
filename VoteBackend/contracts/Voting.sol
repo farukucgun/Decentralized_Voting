@@ -5,14 +5,22 @@ contract Voting {
     bytes32[] public candidateList;
     mapping(bytes32 => uint256) public votesReceived;
     mapping(address => bool) public voters;
+    uint256 public endTime;
 
-    constructor(bytes32[] memory initialCandidates) public {
+    constructor(bytes32[] memory initialCandidates, uint256 durationHour) public {
         for (uint256 i = 0; i < initialCandidates.length; i++) {
             candidateList.push(initialCandidates[i]);
         }
+
+        endTime = block.timestamp + durationHour * 1 minutes;
     }
 
-    function voteForCandidate(bytes32 candidate) public {
+    modifier onlyBefore() {
+        require(block.timestamp < endTime, "Voting has ended.");
+        _;
+    }
+
+    function voteForCandidate(bytes32 candidate) public onlyBefore {
         require(!voters[msg.sender], "Already voted.");
         require(validCandidate(candidate));
         votesReceived[candidate] += 1;
@@ -45,19 +53,6 @@ contract Voting {
         return totalVotes;
     }
 
-    function getWinnerDetails() public view returns (bytes32, uint256) {
-        uint256 winningVoteCount = 0;
-        bytes32 winner;
-        for (uint256 i = 0; i < candidateList.length; i++) {
-            if (votesReceived[candidateList[i]] > winningVoteCount) {
-                winningVoteCount = votesReceived[candidateList[i]];
-                winner = candidateList[i];
-            }
-        }
-        return (winner, winningVoteCount);
-    }
-
-    // get the top 3 candidates and their votes
     function getTopCandidates() public view returns (bytes32[3] memory, uint256[3] memory) {
         bytes32[3] memory topNames;
         uint256[3] memory topVotes;
@@ -65,20 +60,17 @@ contract Voting {
         for (uint256 i = 0; i < candidateList.length; i++) {
             uint256 votes = votesReceived[candidateList[i]];
 
-            // Check if the candidate has more votes than the current top candidates
             for (uint256 j = 0; j < 3; j++) {
                 if (votes >= topVotes[j]) {
-                    // Shift the current top candidates down the list
                     for (uint256 k = 2; k > j; k--) {
                         topVotes[k] = topVotes[k - 1];
                         topNames[k] = topNames[k - 1];
                     }
 
-                    // Update the new top candidate
                     topVotes[j] = votes;
                     topNames[j] = candidateList[i];
 
-                    break; // Exit the inner loop once the candidate is inserted into the top list
+                    break;
                 }
             }
         }
