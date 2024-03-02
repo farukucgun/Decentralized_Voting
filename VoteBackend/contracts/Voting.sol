@@ -12,7 +12,7 @@ contract Voting {
             candidateList.push(initialCandidates[i]);
         }
 
-        endTime = block.timestamp + durationHour * 1 minutes;
+        endTime = block.timestamp + durationHour * 1 hours;
     }
 
     modifier onlyBefore() {

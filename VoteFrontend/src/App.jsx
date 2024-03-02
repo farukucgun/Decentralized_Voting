@@ -39,31 +39,32 @@ const App = () => {
         const web3 = window.web3;
         const accounts = await web3.eth.getAccounts();
         setAccount(accounts[0]);
-
+        
         const networkId = await web3.eth.net.getId();
         const networkData = Voting.networks[networkId];
 
-        if (networkData) {
-          const contract = new web3.eth.Contract(Voting.abi, networkData.address);
-          setContract(contract);
-
-          const candidates = await contract.methods.getCandidates().call();
-          setCandidates(candidates);
-
-          const totalVotes = await contract.methods.getTotalVotes().call();
-          setTotalVotes(Number(totalVotes));
-
-          if (web3.utils.isAddress(account)) {
-            const hasVoted = await contract.methods.voters(account).call();
-            setHasVoted(hasVoted);
-          }
-
-          const endTimeStamp = await contract.methods.endTime().call();
-          const endTime = new Date(Number(endTimeStamp) * 1000);
-          setEndTime(endTime);
-        } else {
+        if (!networkData) {
           window.alert('Voting contract not deployed to detected network.');
+          return;
         }
+
+        const contract = new web3.eth.Contract(Voting.abi, networkData.address);
+        setContract(contract);
+                
+        const candidates = await contract.methods.getCandidates().call();
+        setCandidates(candidates);
+
+        const totalVotes = await contract.methods.getTotalVotes().call();
+        setTotalVotes(Number(totalVotes));
+
+        if (web3.utils.isAddress(account)) {
+          const hasVoted = await contract.methods.voters(account).call();
+          setHasVoted(hasVoted);
+        }
+
+        const endTimeStamp = await contract.methods.endTime().call();
+        const endTime = new Date(Number(endTimeStamp) * 1000);
+        setEndTime(endTime);
       } catch (error) {
         console.error('Error loading blockchain data:', error);
       } finally {
@@ -115,7 +116,7 @@ const App = () => {
     const intervalId = setInterval(getElectionEnd, 60000);
 
     return () => clearInterval(intervalId);
-  }, [contract]);
+  }, [contract]); 
 
   const voteHandler = async (candidate) => {
     try {
