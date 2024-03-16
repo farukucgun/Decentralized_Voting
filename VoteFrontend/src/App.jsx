@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import Web3 from 'web3';
 import Voting from '../../VoteBackend/build/contracts/Voting.json';
+import { Candidates } from './components/candidates/Candidates';
+import { TopCandidates } from './components/candidates/TopCandidates';
+import { Loading } from './components/UI/Loading';
+import { useAlert } from './contexts/AlertContext';
+import { ElectionStatus } from './components/ElectionStatus';
+
 import './App.css';
 
 const App = () => {
