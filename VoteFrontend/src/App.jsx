@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import Web3 from 'web3';
 import Voting from '../../VoteBackend/build/contracts/Voting.json';
-import { Candidates } from './components/candidates/Candidates';
-import { TopCandidates } from './components/candidates/TopCandidates';
-import { Loading } from './components/UI/Loading';
+import Candidates from './components/candidates/Candidates';
+import Loading from './components/UI/Loading';
 import { useAlert } from './contexts/AlertContext';
-import { ElectionStatus } from './components/ElectionStatus';
+import Voted from './components/Voted';
+import ElectionEnd from './components/ElectionEnd';
 
 import './App.css';
 
@@ -21,6 +21,8 @@ const App = () => {
   const [electionEnd, setElectionEnd] = useState(false);
   const [endTime, setEndTime] = useState(0);
 
+  const { setTimedAlert } = useAlert();
+
   useEffect(() => {
     const loadWeb3 = async () => {
       try {
@@ -33,7 +35,7 @@ const App = () => {
           window.web3 = new Web3(new Web3.providers.HttpProvider('http://127.0.0.1:7545'));
         }
       } catch (error) {
-        console.error('Error loading Web3:', error);
+        setTimedAlert('Error loading Web3', 'error', 3000);
       }
     };
     loadWeb3();
@@ -50,7 +52,7 @@ const App = () => {
         const networkData = Voting.networks[networkId];
 
         if (!networkData) {
-          window.alert('Voting contract not deployed to detected network.');
+          setTimedAlert('Contract not deployed to detected network', 'error', 3000);
           return;
         }
 
@@ -72,7 +74,7 @@ const App = () => {
         const endTime = new Date(Number(endTimeStamp) * 1000);
         setEndTime(endTime);
       } catch (error) {
-        console.error('Error loading blockchain data:', error);
+        setTimedAlert('Error loading blockchain data', 'error', 3000);
       } finally {
         setLoading(false);
       }
@@ -112,7 +114,7 @@ const App = () => {
           setElectionEnd(true);
         }
       } catch (error) {
-        console.error('Error checking election end:', error);
+        setTimedAlert('Error getting election end', 'error', 3000);
       } finally {
         setLoading(false);
       }
@@ -147,68 +149,25 @@ const App = () => {
         setHasVoted(hasVoted);
       }
     } catch (error) {
-      console.error('Error voting for candidate:', error);
+      setTimedAlert('Error voting for candidate', 'error', 3000);
     } finally {
       setLoading(false);
     }
   };
 
-  const TopCandidatesEl = () => (
-    <div>
-      <h2>Top Candidates</h2>
-      {topCandidates[0] &&
-        topCandidates[0].map((candidate, key) => (
-          <div key={key} className="candidate">
-            <h3>
-              #{key + 1} {Web3.utils.hexToUtf8(candidate).replace(/\0+$/, '')}{' '}
-              {key === 0 && 'is the WINNER 🏆'}
-            </h3>
-            <p>{Number(topCandidates[1][key])} votes</p>
-          </div>
-        ))}
-    </div>
-  );
-
   if (loading) {
-    return <div>Loading...</div>;
+    return <Loading />;
   }
 
   if (electionEnd) {
-    return (
-      <div>
-        <h1>Election Ended</h1>
-        <TopCandidatesEl />
-      </div>
-    );
+    return <ElectionEnd topCandidates={topCandidates} />;
   }
 
   if (hasVoted) {
-    return (
-      <div>
-        <h1>Thanks for voting!</h1>
-        <p>Your vote has been recorded for {votedCandidate}.</p>
-        <p>There are {totalVotes} votes in total.</p>
-        <p>Election ends on {endTime.toLocaleString()}</p>
-        <TopCandidatesEl />
-      </div>
-    );
+    return <Voted votedCandidate={votedCandidate} totalVotes={totalVotes} endTime={endTime} topCandidates={topCandidates} />;
   }
 
-  return (
-    <div className="App">
-      <h1>Vote Your Candidate</h1>
-      <p>There are {totalVotes} votes in total.</p>
-      <p>Election ends on {endTime.toLocaleString()}</p>
-      <div className="candidates">
-        {candidates.map((candidate, key) => (
-          <div key={key} className="candidate">
-            <h2>{Web3.utils.hexToUtf8(candidate).replace(/\0+$/, '')}</h2>
-            <button onClick={() => voteHandler(candidate)}>Vote</button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <Candidates candidates={candidates} voteHandler={voteHandler} />;
 };
 
 export default App;
